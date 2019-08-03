@@ -2,20 +2,30 @@
 #define UNICODE
 #endif 
 
+#pragma comment(linker,"\"/manifestdependency:type='win32' \
+name='Microsoft.Windows.Common-Controls' version='6.0.0.0' \
+processorArchitecture='*' publicKeyToken='6595b64144ccf1df' language='*'\"")
+
+#pragma comment(lib, "Comctl32.lib")			//needed for "visual style"
+
 #include <windows.h>
 #include <string>
 #include <vector>
 #include <fstream>
 #include "resource.h"
 
+
 static std::string GetWindowStringtext(HWND hWnd);
 static std::string OpenFile(std::string filename);
 static bool SaveFile(std::string filename, std::string content);
+void GetMonitorResolution(int& horizontal, int& vertical);
 
 LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 
 static HINSTANCE hInst;
 static HWND text_window, get_text, open_file;
+static int w, h;
+
 
 int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR pCmdLine, int nCmdShow)
 {
@@ -33,14 +43,16 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR pCmdLine, int nCmdShow
 	
 	// Create the window.
 
+	GetMonitorResolution(w, h);
+
 	HWND hwnd = CreateWindowEx(
 		0,                              // Optional window styles.
 		CLASS_NAME,                     // Window class
 		L"Note App",    // Window text
-		WS_OVERLAPPEDWINDOW,            // Window style
+		WS_OVERLAPPEDWINDOW | CDS_FULLSCREEN | WS_VSCROLL,            // Window style
 
 		// Size and position
-		CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT,
+		CW_USEDEFAULT, CW_USEDEFAULT, w, h,
 
 		NULL,       // Parent window    
 		NULL,       // Menu
@@ -56,6 +68,17 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR pCmdLine, int nCmdShow
 	ShowWindow(hwnd, nCmdShow);
 	UpdateWindow(hwnd);
 
+	//define a font
+	HFONT hf;
+	NONCLIENTMETRICS ncm = { 0 };
+
+	ncm.cbSize = sizeof(NONCLIENTMETRICS);
+	SystemParametersInfo(SPI_GETNONCLIENTMETRICS, sizeof(ncm), &ncm, 0);
+	hf = CreateFontIndirect(&ncm.lfStatusFont);
+	hf = (HFONT)GetStockObject(DEFAULT_GUI_FONT);
+	SendMessage(hwnd, WM_SETFONT, (WPARAM)hf, TRUE);
+	SendMessage(text_window, WM_SETFONT, (WPARAM)hf, TRUE);
+
 	// Run the message loop.
 
 	MSG msg = { };
@@ -69,8 +92,20 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR pCmdLine, int nCmdShow
 }
 
 LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
-{
+{	
+	HFONT hf;
+	long lfHeight;
+	HDC hdc;
 
+	hdc = GetDC(NULL);
+	lfHeight = -MulDiv(12, GetDeviceCaps(hdc, LOGPIXELSY), 72);
+
+	int width, height;
+	
+	GetMonitorResolution(w, h);
+
+	width = (w / 2 + 595);
+	height = (h / 2 + 842);
 
 	switch (uMsg)
 	{
@@ -83,8 +118,8 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 			WS_EX_CLIENTEDGE,
 			"Edit",
 			"",
-			WS_VISIBLE | WS_CHILD | WS_VSCROLL | ES_MULTILINE,
-			10, 10, 300, 500,
+			WS_VISIBLE | WS_CHILD | WS_VSCROLL | ES_MULTILINE | ES_LEFT,
+			100, 10, width, height,
 			hwnd,
 			NULL,
 			hInst,
@@ -95,6 +130,46 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 
 		switch (LOWORD(wParam))
 		{
+		case ID_ARIAL_ITALIC:
+			hf = CreateFontA(lfHeight, 0, 0, 0, FW_NORMAL, TRUE, 0, 0, 0, 0, 0, 0, 0, "Arial");
+			SendMessage(text_window, WM_SETFONT, (WPARAM)hf, TRUE);
+			break;
+
+		case ID_ARIAL_NORMAL:
+			hf = CreateFontA(lfHeight, 0, 0, 0, FW_NORMAL, FALSE, 0, 0, 0, 0, 0, 0, 0, "Arial");
+			SendMessage(text_window, WM_SETFONT, (WPARAM)hf, TRUE);
+			break;
+
+		case ID_ARIAL_BOLD:
+			hf = CreateFontA(lfHeight, 0, 0, 0, FW_BOLD, FALSE, 0, 0, 0, 0, 0, 0, 0, "Arial");
+			SendMessage(text_window, WM_SETFONT, (WPARAM)hf, TRUE);
+			break;
+
+		case ID_ARIAL_UNDERLINE:
+			hf = CreateFontA(lfHeight, 0, 0, 0, FW_NORMAL, FALSE, TRUE, 0, 0, 0, 0, 0, 0, "Arial");
+			SendMessage(text_window, WM_SETFONT, (WPARAM)hf, TRUE);
+			break;
+
+		case ID_TIMESNEWROMAN_ITALIC:
+			hf = CreateFontA(lfHeight, 0, 0, 0, FW_NORMAL, TRUE, 0, 0, 0, 0, 0, 0, 0, "Times New Roman");
+			SendMessage(text_window, WM_SETFONT, (WPARAM)hf, TRUE);
+			break;
+
+		case ID_TIMESNEWROMAN_NORMAL:
+			hf = CreateFontA(lfHeight, 0, 0, 0, FW_NORMAL, FALSE, 0, 0, 0, 0, 0, 0, 0, "Times New Roman");
+			SendMessage(text_window, WM_SETFONT, (WPARAM)hf, TRUE);
+			break;
+
+		case ID_TIMESNEWROMAN_BOLD:
+			hf = CreateFontA(lfHeight, 0, 0, 0, FW_BOLD, FALSE, 0, 0, 0, 0, 0, 0, 0, "Times New Roman");
+			SendMessage(text_window, WM_SETFONT, (WPARAM)hf, TRUE);
+			break;
+
+		case ID_TIMESNEWROMAN_UNDERLINE:;
+			hf = CreateFontA(lfHeight, 0, 0, 0, FW_NORMAL, FALSE, TRUE, 0, 0, 0, 0, 0, 0, "Times New Roman");
+			SendMessage(text_window, WM_SETFONT, (WPARAM)hf, TRUE);
+			break;
+
 			case ID_FILE_OPEN:
 			{
 				//this is needed to call GetSaveFileName
@@ -115,11 +190,12 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 				std::string text = OpenFile(ofn.lpstrFile);
 
 				if (SetWindowTextA(text_window, text.c_str())) {
-					MessageBoxA(NULL, "Successfully loaded file!", "Success", MB_OK);
+					//MessageBoxA(NULL, "Successfully loaded file!", "Success", MB_OK);
+					//bravo...
 				}
 			}
 			break;
-			case ID_FILE_SAVEAS:
+			case ID_FILE_SAVE:
 			{
 				//this is needed to call GetSaveFileName
 				OPENFILENAMEA ofn;
@@ -149,9 +225,6 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 				}
 			}
 			break;
-			case ID_FILE_SAVE:
-
-				break;
 			default:
 				break;
 		}
@@ -183,17 +256,33 @@ std::string OpenFile(std::string filename) {
 	std::ifstream file(filename);
 	std::string tmp;
 
-	if (file.is_open()) {
-		std::getline(file, tmp);
-	}
+	std::vector<std::string> buffer;
 
-	return tmp;
+	if (file.is_open()) {
+		while (std::getline(file, tmp))
+			buffer.push_back(tmp);
+	}
+	
+	std::string return_string;
+	for (auto& i : buffer)
+		return_string += i;
+
+	return return_string;
 }
 
 bool SaveFile(std::string filename, std::string content) {
-	std::ofstream file(filename);
+	std::ofstream file(filename, std::ofstream::app);
 	if (file << content)
 		return true;
 
 	return false;
+}
+
+void GetMonitorResolution(int& horizontal, int& vertical) {
+	RECT window_rect;
+	const HWND hDesktop = GetDesktopWindow();
+	GetWindowRect(hDesktop, &window_rect);
+	
+	horizontal = window_rect.right;
+	vertical = window_rect.bottom;
 }
