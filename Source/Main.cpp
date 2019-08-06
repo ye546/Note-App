@@ -256,16 +256,19 @@ std::string OpenFile(std::string filename) {
 	std::ifstream file(filename);
 	std::string tmp;
 
-	std::vector<std::string> buffer;
+	std::vector<std::string>* buffer = new std::vector<std::string>;
 
 	if (file.is_open()) {
 		while (std::getline(file, tmp))
-			buffer.push_back(tmp);
+			buffer->push_back(tmp);
 	}
 	
 	std::string return_string;
-	for (auto& i : buffer)
+	for (auto& i : *buffer)
 		return_string += i;
+
+	delete[] buffer;
+	buffer = nullptr;
 
 	return return_string;
 }
