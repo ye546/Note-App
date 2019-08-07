@@ -29,7 +29,6 @@ static int w, h;
 
 int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR pCmdLine, int nCmdShow)
 {
-	// Register the window class.
 	const wchar_t CLASS_NAME[] = L"Note App";
 
 	WNDCLASS wc = { };
@@ -40,24 +39,22 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR pCmdLine, int nCmdShow
 	wc.lpszMenuName = MAKEINTRESOURCE(IDR_MENU1);
 
 	RegisterClass(&wc);
-	
-	// Create the window.
 
 	GetMonitorResolution(w, h);
 
 	HWND hwnd = CreateWindowEx(
-		0,                              // Optional window styles.
-		CLASS_NAME,                     // Window class
-		L"Note App",    // Window text
-		WS_OVERLAPPEDWINDOW | CDS_FULLSCREEN | WS_VSCROLL,            // Window style
+		0,                             
+		CLASS_NAME,                     
+		L"Note App",    
+		WS_OVERLAPPEDWINDOW | CDS_FULLSCREEN | WS_VSCROLL,           
 
 		// Size and position
 		CW_USEDEFAULT, CW_USEDEFAULT, w, h,
 
-		NULL,       // Parent window    
-		NULL,       // Menu
-		hInstance,  // Instance handle
-		NULL        // Additional application data
+		NULL,        
+		NULL,       
+		hInstance,  
+		NULL        
 	);
 
 	if (hwnd == NULL)
@@ -246,9 +243,11 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 std::string GetWindowStringtext(HWND hWnd) {
 	int len = GetWindowTextLength(hWnd) + 1; //+1 for trailing backslash
 	std::vector<char> buffer(len);
+	
 	GetWindowTextA(hWnd, &buffer[0], buffer.size());
 	std::string text = &buffer[0];
 	std::string return_string(text.begin(), text.end());
+	
 	return return_string;
 }
 
@@ -267,7 +266,7 @@ std::string OpenFile(std::string filename) {
 	for (auto& i : *buffer)
 		return_string += i;
 
-	delete[] buffer;
+	delete buffer;
 	buffer = nullptr;
 
 	return return_string;
