@@ -1,12 +1,7 @@
+#pragma once
 #ifndef UNICODE
 #define UNICODE
 #endif 
-
-#pragma comment(linker,"\"/manifestdependency:type='win32' \
-name='Microsoft.Windows.Common-Controls' version='6.0.0.0' \
-processorArchitecture='*' publicKeyToken='6595b64144ccf1df' language='*'\"")
-
-#pragma comment(lib, "Comctl32.lib")			//needed for "visual style"
 
 #include <windows.h>
 #include <string>
@@ -14,23 +9,31 @@ processorArchitecture='*' publicKeyToken='6595b64144ccf1df' language='*'\"")
 #include <fstream>
 #include "resource.h"
 
+//needed for "visual style"
+#pragma comment(lib, "Comctl32.lib")			
+#pragma comment(linker,"\"/manifestdependency:type='win32' \
+name='Microsoft.Windows.Common-Controls' version='6.0.0.0' \
+processorArchitecture='*' publicKeyToken='6595b64144ccf1df' language='*'\"")
 
 static std::string GetWindowStringtext(HWND hWnd);
 static std::string OpenFile(std::string filename);
 static bool SaveFile(std::string filename, std::string content);
-void GetMonitorResolution(int& horizontal, int& vertical);
-
-LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 
 static HINSTANCE hInst;
 static HWND text_window, get_text, open_file;
-static int w, h;
+static int w = 800, h = 600;
 
+static std::string font_name;
+static bool underline, italic;
+static int thickness;
+static long lfHeight;
+
+void GetMonitorResolution(int& horizontal, int& vertical);
+LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 
 int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR pCmdLine, int nCmdShow)
 {
 	const wchar_t CLASS_NAME[] = L"Note App";
-
 	WNDCLASS wc = { };
 
 	wc.lpfnWndProc = WindowProc;
@@ -40,21 +43,17 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR pCmdLine, int nCmdShow
 
 	RegisterClass(&wc);
 
-	GetMonitorResolution(w, h);
+	//GetMonitorResolution(w, h);
 
 	HWND hwnd = CreateWindowEx(
-		0,                             
-		CLASS_NAME,                     
-		L"Note App",    
-		WS_OVERLAPPEDWINDOW | CDS_FULLSCREEN | WS_VSCROLL,           
-
-		// Size and position
+		0, CLASS_NAME,                     
+		L"Note App",   
+		WS_OVERLAPPEDWINDOW,
 		CW_USEDEFAULT, CW_USEDEFAULT, w, h,
-
-		NULL,        
-		NULL,       
+		NULL,          
+		NULL,      
 		hInstance,  
-		NULL        
+		NULL       
 	);
 
 	if (hwnd == NULL)
@@ -76,8 +75,6 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR pCmdLine, int nCmdShow
 	SendMessage(hwnd, WM_SETFONT, (WPARAM)hf, TRUE);
 	SendMessage(text_window, WM_SETFONT, (WPARAM)hf, TRUE);
 
-	// Run the message loop.
-
 	MSG msg = { };
 	while (GetMessage(&msg, NULL, 0, 0))
 	{
@@ -91,18 +88,17 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR pCmdLine, int nCmdShow
 LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {	
 	HFONT hf;
-	long lfHeight;
 	HDC hdc;
 
 	hdc = GetDC(NULL);
 	lfHeight = -MulDiv(12, GetDeviceCaps(hdc, LOGPIXELSY), 72);
 
-	int width, height;
+	int width = 640, height = 480;
 	
-	GetMonitorResolution(w, h);
+	//GetMonitorResolution(w, h);
 
-	width = (w / 2 + 595);
-	height = (h / 2 + 842);
+	//width = (w / 2 + 595);
+	//height = (h / 2 + 842);
 
 	switch (uMsg)
 	{
@@ -115,7 +111,8 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 			WS_EX_CLIENTEDGE,
 			"Edit",
 			"",
-			WS_VISIBLE | WS_CHILD | WS_VSCROLL | ES_MULTILINE | ES_LEFT,
+			WS_CHILD | WS_VISIBLE | WS_VSCROLL |
+			ES_LEFT | ES_MULTILINE | ES_AUTOVSCROLL,
 			100, 10, width, height,
 			hwnd,
 			NULL,
@@ -127,45 +124,167 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 
 		switch (LOWORD(wParam))
 		{
-		case ID_ARIAL_ITALIC:
-			hf = CreateFontA(lfHeight, 0, 0, 0, FW_NORMAL, TRUE, 0, 0, 0, 0, 0, 0, 0, "Arial");
-			SendMessage(text_window, WM_SETFONT, (WPARAM)hf, TRUE);
-			break;
+			case ID_ARIAL_ITALIC:
+				font_name = "Arial";
+				italic = true;
+				thickness = 0;
+				underline = false;
 
-		case ID_ARIAL_NORMAL:
-			hf = CreateFontA(lfHeight, 0, 0, 0, FW_NORMAL, FALSE, 0, 0, 0, 0, 0, 0, 0, "Arial");
-			SendMessage(text_window, WM_SETFONT, (WPARAM)hf, TRUE);
-			break;
+				hf = CreateFontA(lfHeight, 0, 0, 0, thickness, italic, underline, 0, 0, 0, 0, 0, 0, font_name.c_str());
+				SendMessage(text_window, WM_SETFONT, (WPARAM)hf, TRUE);
+				break;
 
-		case ID_ARIAL_BOLD:
-			hf = CreateFontA(lfHeight, 0, 0, 0, FW_BOLD, FALSE, 0, 0, 0, 0, 0, 0, 0, "Arial");
-			SendMessage(text_window, WM_SETFONT, (WPARAM)hf, TRUE);
-			break;
+			case ID_ARIAL_NORMAL:
+				font_name = "Arial";
+				italic = false;
+				underline = false;
+				thickness = 0;
 
-		case ID_ARIAL_UNDERLINE:
-			hf = CreateFontA(lfHeight, 0, 0, 0, FW_NORMAL, FALSE, TRUE, 0, 0, 0, 0, 0, 0, "Arial");
-			SendMessage(text_window, WM_SETFONT, (WPARAM)hf, TRUE);
-			break;
+				hf = CreateFontA(lfHeight, 0, 0, 0, thickness, italic, underline, 0, 0, 0, 0, 0, 0, font_name.c_str());
+				SendMessage(text_window, WM_SETFONT, (WPARAM)hf, TRUE);
+				break;
 
-		case ID_TIMESNEWROMAN_ITALIC:
-			hf = CreateFontA(lfHeight, 0, 0, 0, FW_NORMAL, TRUE, 0, 0, 0, 0, 0, 0, 0, "Times New Roman");
-			SendMessage(text_window, WM_SETFONT, (WPARAM)hf, TRUE);
-			break;
+			case ID_ARIAL_BOLD:
+				font_name = "Arial";
 
-		case ID_TIMESNEWROMAN_NORMAL:
-			hf = CreateFontA(lfHeight, 0, 0, 0, FW_NORMAL, FALSE, 0, 0, 0, 0, 0, 0, 0, "Times New Roman");
-			SendMessage(text_window, WM_SETFONT, (WPARAM)hf, TRUE);
-			break;
+				thickness = FW_BOLD;
+				underline = false;
+				italic = false;
 
-		case ID_TIMESNEWROMAN_BOLD:
-			hf = CreateFontA(lfHeight, 0, 0, 0, FW_BOLD, FALSE, 0, 0, 0, 0, 0, 0, 0, "Times New Roman");
-			SendMessage(text_window, WM_SETFONT, (WPARAM)hf, TRUE);
-			break;
+				hf = CreateFontA(lfHeight, 0, 0, 0, thickness, italic, underline, 0, 0, 0, 0, 0, 0, font_name.c_str());
+				SendMessage(text_window, WM_SETFONT, (WPARAM)hf, TRUE);
+				break;
 
-		case ID_TIMESNEWROMAN_UNDERLINE:;
-			hf = CreateFontA(lfHeight, 0, 0, 0, FW_NORMAL, FALSE, TRUE, 0, 0, 0, 0, 0, 0, "Times New Roman");
-			SendMessage(text_window, WM_SETFONT, (WPARAM)hf, TRUE);
-			break;
+			case ID_ARIAL_UNDERLINE:
+				font_name = "Arial";
+
+				underline = true;
+				thickness = 0;
+				italic = false;
+
+				hf = CreateFontA(lfHeight, 0, 0, 0, thickness, italic, underline, 0, 0, 0, 0, 0, 0, font_name.c_str());
+				SendMessage(text_window, WM_SETFONT, (WPARAM)hf, TRUE);
+				break;
+
+			case ID_TIMESNEWROMAN_ITALIC:
+				font_name = "Times New Roman";
+
+				italic = true;
+				underline = false;
+				thickness = 0;
+
+				hf = CreateFontA(lfHeight, 0, 0, 0, thickness, italic, underline, 0, 0, 0, 0, 0, 0, font_name.c_str());
+				SendMessage(text_window, WM_SETFONT, (WPARAM)hf, TRUE);
+				break;
+
+			case ID_TIMESNEWROMAN_NORMAL:
+				font_name = "Times New Roman";
+
+				underline = false;
+				italic = false;
+				thickness = 0;
+
+				hf = CreateFontA(lfHeight, 0, 0, 0, thickness, italic, underline, 0, 0, 0, 0, 0, 0, font_name.c_str());
+				SendMessage(text_window, WM_SETFONT, (WPARAM)hf, TRUE);
+				break;
+
+			case ID_TIMESNEWROMAN_BOLD:
+				font_name = "Times New Roman";
+
+				underline = false;
+				italic = false;
+				thickness = FW_BOLD;
+
+				hf = CreateFontA(lfHeight, 0, 0, 0, thickness, italic, underline, 0, 0, 0, 0, 0, 0, font_name.c_str());
+				SendMessage(text_window, WM_SETFONT, (WPARAM)hf, TRUE);
+				break;
+
+			case ID_TIMESNEWROMAN_UNDERLINE:
+				font_name = "Times New Roman";
+
+				underline = true;
+				italic = false;
+				thickness = 0;
+
+				hf = CreateFontA(lfHeight, 0, 0, 0, thickness, italic, underline, 0, 0, 0, 0, 0, 0, font_name.c_str());
+				SendMessage(text_window, WM_SETFONT, (WPARAM)hf, TRUE);
+				break;
+
+			case ID_TEXTSIZE_8:
+				lfHeight = -MulDiv(8, GetDeviceCaps(hdc, LOGPIXELSY), 72);
+				hf = CreateFontA(lfHeight, 0, 0, 0, thickness, italic, underline, 0, 0, 0, 0, 0, 0, font_name.c_str());
+				SendMessage(text_window, WM_SETFONT, (WPARAM)hf, TRUE);
+				break;
+			case ID_TEXTSIZE_9:
+				lfHeight = -MulDiv(9, GetDeviceCaps(hdc, LOGPIXELSY), 72);
+				hf = CreateFontA(lfHeight, 0, 0, 0, thickness, italic, underline, 0, 0, 0, 0, 0, 0, font_name.c_str());
+				SendMessage(text_window, WM_SETFONT, (WPARAM)hf, TRUE);
+				break;
+			case ID_TEXTSIZE_10:
+				lfHeight = -MulDiv(10, GetDeviceCaps(hdc, LOGPIXELSY), 72);
+				hf = CreateFontA(lfHeight, 0, 0, 0, thickness, italic, underline, 0, 0, 0, 0, 0, 0, font_name.c_str());
+				SendMessage(text_window, WM_SETFONT, (WPARAM)hf, TRUE);
+				break;
+			case ID_TEXTSIZE_11:
+				lfHeight = -MulDiv(11, GetDeviceCaps(hdc, LOGPIXELSY), 72);
+				hf = CreateFontA(lfHeight, 0, 0, 0, thickness, italic, underline, 0, 0, 0, 0, 0, 0, font_name.c_str());
+				SendMessage(text_window, WM_SETFONT, (WPARAM)hf, TRUE);
+				break;
+			case ID_TEXTSIZE_12:
+				lfHeight = -MulDiv(12, GetDeviceCaps(hdc, LOGPIXELSY), 72);
+				hf = CreateFontA(lfHeight, 0, 0, 0, thickness, italic, underline, 0, 0, 0, 0, 0, 0, font_name.c_str());
+				SendMessage(text_window, WM_SETFONT, (WPARAM)hf, TRUE);
+				break;
+			case ID_TEXTSIZE_14:
+				lfHeight = -MulDiv(14, GetDeviceCaps(hdc, LOGPIXELSY), 72);
+				hf = CreateFontA(lfHeight, 0, 0, 0, thickness, italic, underline, 0, 0, 0, 0, 0, 0, font_name.c_str());
+				SendMessage(text_window, WM_SETFONT, (WPARAM)hf, TRUE);
+				break;
+			case ID_TEXTSIZE_16:
+				lfHeight = -MulDiv(16, GetDeviceCaps(hdc, LOGPIXELSY), 72);
+				hf = CreateFontA(lfHeight, 0, 0, 0, thickness, italic, underline, 0, 0, 0, 0, 0, 0, font_name.c_str());
+				SendMessage(text_window, WM_SETFONT, (WPARAM)hf, TRUE);
+				break;
+			case ID_TEXTSIZE_18:
+				lfHeight = -MulDiv(18, GetDeviceCaps(hdc, LOGPIXELSY), 72);
+				hf = CreateFontA(lfHeight, 0, 0, 0, thickness, italic, underline, 0, 0, 0, 0, 0, 0, font_name.c_str());
+				SendMessage(text_window, WM_SETFONT, (WPARAM)hf, TRUE);
+				break;
+			case ID_TEXTSIZE_20:
+				lfHeight = -MulDiv(20, GetDeviceCaps(hdc, LOGPIXELSY), 72);
+				hf = CreateFontA(lfHeight, 0, 0, 0, thickness, italic, underline, 0, 0, 0, 0, 0, 0, font_name.c_str());
+				SendMessage(text_window, WM_SETFONT, (WPARAM)hf, TRUE);
+				break;
+			case ID_TEXTSIZE_24:
+				lfHeight = -MulDiv(24, GetDeviceCaps(hdc, LOGPIXELSY), 72);
+				hf = CreateFontA(lfHeight, 0, 0, 0, thickness, italic, underline, 0, 0, 0, 0, 0, 0, font_name.c_str());
+				SendMessage(text_window, WM_SETFONT, (WPARAM)hf, TRUE);
+				break;
+			case ID_TEXTSIZE_26:
+				lfHeight = -MulDiv(26, GetDeviceCaps(hdc, LOGPIXELSY), 72);
+				hf = CreateFontA(lfHeight, 0, 0, 0, thickness, italic, underline, 0, 0, 0, 0, 0, 0, font_name.c_str());
+				SendMessage(text_window, WM_SETFONT, (WPARAM)hf, TRUE);
+				break;
+			case ID_TEXTSIZE_28:
+				lfHeight = -MulDiv(28, GetDeviceCaps(hdc, LOGPIXELSY), 72);
+				hf = CreateFontA(lfHeight, 0, 0, 0, thickness, italic, underline, 0, 0, 0, 0, 0, 0, font_name.c_str());
+				SendMessage(text_window, WM_SETFONT, (WPARAM)hf, TRUE);
+				break;
+			case ID_TEXTSIZE_36:
+				lfHeight = -MulDiv(36, GetDeviceCaps(hdc, LOGPIXELSY), 72);
+				hf = CreateFontA(lfHeight, 0, 0, 0, thickness, italic, underline, 0, 0, 0, 0, 0, 0, font_name.c_str());
+				SendMessage(text_window, WM_SETFONT, (WPARAM)hf, TRUE);
+				break;
+			case ID_TEXTSIZE_48:
+				lfHeight = -MulDiv(48, GetDeviceCaps(hdc, LOGPIXELSY), 72);
+				hf = CreateFontA(lfHeight, 0, 0, 0, thickness, italic, underline, 0, 0, 0, 0, 0, 0, font_name.c_str());
+				SendMessage(text_window, WM_SETFONT, (WPARAM)hf, TRUE);
+				break;
+			case ID_TEXTSIZE_72:
+				lfHeight = -MulDiv(72, GetDeviceCaps(hdc, LOGPIXELSY), 72);
+				hf = CreateFontA(lfHeight, 0, 0, 0, thickness, italic, underline, 0, 0, 0, 0, 0, 0, font_name.c_str());
+				SendMessage(text_window, WM_SETFONT, (WPARAM)hf, TRUE);
+				break;
 
 			case ID_FILE_OPEN:
 			{
@@ -243,11 +362,9 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 std::string GetWindowStringtext(HWND hWnd) {
 	int len = GetWindowTextLength(hWnd) + 1; //+1 for trailing backslash
 	std::vector<char> buffer(len);
-	
 	GetWindowTextA(hWnd, &buffer[0], buffer.size());
 	std::string text = &buffer[0];
 	std::string return_string(text.begin(), text.end());
-	
 	return return_string;
 }
 
